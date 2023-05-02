@@ -1,0 +1,12 @@
+<%- include("templates/header") %> 
+  <% if(locals.email) { %>
+    Hello, <%= locals.name %>! <br>
+    <button onclick="window.location.href='/members'">Go to Members Area</button><br>
+    <form action="/logout" method="post">
+      <button type="submit">Logout</button>
+    </form>
+  <% } else { %>
+    <button onclick="window.location.href='/signup'">Sign Up</button><br>
+    <button onclick="window.location.href='/login'">Log In</button>
+  <% } %>
+<%- include("templates/footer") %>

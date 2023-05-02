@@ -1,0 +1,13 @@
+<%- include("templates/header") %>
+log in
+<form action="/loggingin" method="post">
+  <input name="email" type="text" placeholder="email" value="<%= email %>"><br>
+  <input name="password" type="password" placeholder="password"><br>
+  <% if (error) { %>
+    <p style="color: red">Invalid email address</p>
+  <% } else if (incorrect) { %>
+    <p style="color: red">Password is incorrect</p>
+  <% } %>
+  <button>Submit</button>
+</form>
+<%- include("templates/footer") %>

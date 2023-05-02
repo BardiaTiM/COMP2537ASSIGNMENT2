@@ -1,0 +1,11 @@
+<%- include("templates/header") %>
+  log in
+  <form action='/loggingin' method='post'>
+  <input name='email' type='text' placeholder='email' <%= locals.req.query.email ? `value='${locals.req.query.email}'` : '' %>><br>
+  <input name='password' type='password' placeholder='password'><br>
+  <% if(req.query.error){ %>
+    <p style="color:red">Invalid email address</p>
+  <% } %>
+  <button>Submit</button>
+  </form>
+<%- include("templates/footer") %>

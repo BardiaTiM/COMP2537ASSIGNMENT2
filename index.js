@@ -20,10 +20,12 @@ const mongodb_session_secret = process.env.MONGODB_SESSION_SECRET;
 
 
 var {database} = require('./databaseConnection.js');
+const { render } = require('ejs');
 
 const userCollection = database.db(mongodb_database).collection('users');
 
 app.use(express.urlencoded({extended: false}));
+app.set('view engine', 'ejs');
 
 var mongoStore = MongoStore.create({
 	mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/sessions`,
@@ -74,40 +76,12 @@ app.get('/nosql-injection', async (req,res) => {
 app.get('/', (req, res) => {
     const email = req.session.email;
     const name = req.session.name;
-    if (typeof email === "string" && email !== "") {
-      var html = `
-        Hello, ${name}! <br\>
-        <button onclick="window.location.href='/members'">Go to Members Area</button><br>
-        <form action="/logout" method="post">
-        <button type="submit">Logout</button>
-        </form>
-      `;
-      res.send(html);
-    } else {
-      var html = `
-        <button onclick="window.location.href='/signup'">Sign Up</button><br>
-        <button onclick="window.location.href='/login'">Log In</button>
-      `;
-      res.send(html);
-    }
+    res.render('home', {email: email, name: name});
   });
-  
 
 //SIGN UP
 app.get('/signup', (req, res) => {
-    var html = `
-      Sign Up:
-      <br/>
-      <br/>
-      <form action='/submitUser' method='post'>
-        <input name='name' type='text' placeholder='name'><br>
-        <input name='email' type='text' placeholder='email'><br>
-        <input name='password' type='password' placeholder='password'><br>
-        <br/>
-        <button type='submit'>Submit</button>
-      </form>
-    `;
-    res.send(html);
+    res.render('signup');
   });
 
 
@@ -165,61 +139,56 @@ app.get('/signup', (req, res) => {
 
 
 //LOG IN 
-app.post('/loggingin', async (req,res) => {
-  var email = req.body.email;
-  var password = req.body.password;
+// POST /loggingin route
+app.post('/loggingin', async (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
 
+  // Validate email using Joi schema
   const schema = Joi.string().max(20).required();
   const validationResult = schema.validate(email);
   if (validationResult.error != null) {
-     console.log(validationResult.error);
-     res.redirect("/login?error=true");
-     return;
+    console.log(validationResult.error);
+    res.redirect("/login?error=true");
+    return;
   }
 
-  const result = await userCollection.find({email: email}).project({email: 1, password: 1, name: 1}).toArray();
+  // Look up user in database
+  const result = await userCollection
+    .find({ email: email })
+    .project({ email: 1, password: 1, name: 1 })
+    .toArray();
 
   console.log(result);
-  if (result.length != 1) {
-      console.log("user not found");
-      res.redirect("/login");
-      return;
+  if (result.length !== 1) {
+    console.log("user not found");
+    res.redirect("/login");
+    return;
   }
-  if (await bcrypt.compare(password, result[0].password)) {
-      console.log("correct password");
-      req.session.authenticated = true;
-      req.session.email = email;
-      req.session.name = result[0].name;
-      req.session.cookie.maxAge = expireTime;
 
-      res.redirect('/members');
-      return;
-  }
-  else {
-      console.log("incorrect password");
-      var html = `log in
-          <form action='/loggingin' method='post'>
-          <input name='email' type='text' placeholder='email' value='${email}'><br>
-          <input name='password' type='password' placeholder='password'><br>
-          <p style="color:red">Password is incorrect</p>
-          <button>Submit</button>
-          </form>
-      `;
-      res.send(html);
+  // Check if password is correct
+  if (await bcrypt.compare(password, result[0].password)) {
+    console.log("correct password");
+    req.session.authenticated = true;
+    req.session.email = email;
+    req.session.name = result[0].name;
+    req.session.cookie.maxAge = expireTime;
+
+    res.redirect('/members');
+    return;
+  } else {
+    console.log("incorrect password");
+    res.render('loggingin', {
+      email: email,
+      incorrect: true,
+      error: false,
+    });
   }
 });
 
+
 app.get('/login', (req,res) => {
-  var html = `
-  log in
-  <form action='/loggingin' method='post'>
-  <input name='email' type='text' placeholder='email' ${req.query.email ? `value='${req.query.email}'` : ''}><br>
-  <input name='password' type='password' placeholder='password'><br>
-  ${req.query.error ? '<p style="color:red">Invalid email address</p>' : ''}
-  <button>Submit</button>
-  </form>
-  `;
-  res.send(html);
+  res.render('login', {req: req});
 });
 
 
@@ -238,14 +207,7 @@ app.get('/members', (req, res) => {
       res.redirect('/login');
     } else {
       // Render the members page with the user's name and profile picture
-      const html = `
-        <h1>Hello, ${name}.</h1>
-        <img src="${pictureUrl}">
-        <form action="/logout" method="post">
-        <button type="submit">Sign Out</button>
-        </form>
-      `;
-      res.send(html);
+      res.render('members', { name: name, pictureUrl: pictureUrl });
     }
   });
 
