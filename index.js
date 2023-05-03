@@ -8,7 +8,7 @@ const Joi = require('joi');
 const app = express();
 const expireTime = 3600000; // 1 hour
 
-const port = process.env.PORT || 3030;
+const port = process.env.PORT || 3031;
 
 /* secret information section */
 const mongodb_host = process.env.MONGODB_HOST;
