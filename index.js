@@ -234,6 +234,24 @@ app.get('/admin', sessionValidation, adminAuthorization, async (req,res) => {
   res.render("admin", {users: result});
 });
 
+//PROMO AND DEMOTE
+const ObjectId = require('mongodb').ObjectId;
+
+app.post('/promoteUser/:id', sessionValidation, adminAuthorization, async (req,res) => {
+  const id = req.params.id;
+  const result = await userCollection.updateOne({_id: new ObjectId(id)}, {$set: {user_type: "admin"}});
+  console.log("User promoted to admin");
+  res.redirect('/admin');
+});
+
+app.post('/demoteUser/:id', sessionValidation, adminAuthorization, async (req,res) => {
+  const id = req.params.id;
+  const result = await userCollection.updateOne({_id: new ObjectId(id)}, {$set: {user_type: "user"}});
+  console.log("User demoted to user");
+  res.redirect('/admin');
+});
+
+
 
 //MEMBERS
 app.get('/members', (req, res) => {

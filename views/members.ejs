@@ -1,19 +1,19 @@
 <%- include("templates/header") %>
-  <h1>Hello, <%= name %> </h1>
-  <div class="container">
-    <div class="row">
-      <div class="col-sm">
-        <img src="<%= pic1 %>">
+  <div class="container mt-5">
+    <h1>Hello, <%= name %> </h1>
+    <div class="row mt-5">
+      <div class="col-sm-4">
+        <img src="<%= pic1 %>" class="img-fluid rounded my-3" style="height: 400px;">
       </div>
-      <div class="col-sm">
-        <img src="<%= pic2 %>">
+      <div class="col-sm-4">
+        <img src="<%= pic2 %>" class="img-fluid rounded my-3" style="height: 400px;">
       </div>
-      <div class="col-sm">
-        <img src="<%= pic3 %>">
+      <div class="col-sm-4">
+        <img src="<%= pic3 %>" class="img-fluid rounded my-3" style="height: 400px;">
       </div>
     </div>
+    <form action="/logout" method="post" class="mt-5">
+      <button type="submit" class="btn btn-danger">Sign Out</button>
+    </form>
   </div>
-  <form action="/logout" method="post">
-    <button type="submit">Sign Out</button>
-  </form>
 <%- include("templates/footer") %>

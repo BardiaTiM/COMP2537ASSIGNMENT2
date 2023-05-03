@@ -1,12 +1,26 @@
 <%- include("templates/header") %>
-  Sign Up:
-  <br/>
-  <br/>
-  <form action='/submitUser' method='post'>
-    <input name='name' type='text' placeholder='name'><br>
-    <input name='email' type='text' placeholder='email'><br>
-    <input name='password' type='password' placeholder='password'><br>
-    <br/>
-    <button type='submit'>Submit</button>
-  </form>
+
+<div class="container">
+  <h1 class="text-center">Sign Up:</h1>
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <form action='/submitUser' method='post'>
+        <div class="form-group">
+          <label for="name">Name:</label>
+          <input name='name' type='text' class="form-control" id="name" placeholder='Enter your name'>
+        </div>
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input name='email' type='text' class="form-control" id="email" placeholder='Enter your email'>
+        </div>
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input name='password' type='password' class="form-control" id="password" placeholder='Enter your password'>
+        </div>
+        <br/>
+        <button type='submit' class="btn btn-primary">Submit</button>
+      </form>
+    </div>
+  </div>
+</div>
 <%- include("templates/footer") %>
