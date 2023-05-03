@@ -7,7 +7,6 @@ const bcrypt = require('bcrypt');
 const Joi = require('joi');
 const app = express();
 const expireTime = 3600000; // 1 hour
-const images = ["bron1.gif", "bron2.gif", "bron3.gif"];
 
 const port = process.env.PORT || 3030;
 
@@ -20,7 +19,6 @@ const mongodb_session_secret = process.env.MONGODB_SESSION_SECRET;
 
 
 var {database} = require('./databaseConnection.js');
-const { render } = require('ejs');
 
 const userCollection = database.db(mongodb_database).collection('users');
 
@@ -40,6 +38,40 @@ app.use(session({
     saveUninitialized: false,
     resave: true
 }));
+
+function isValidSession(req) {
+  if (req.session.authenticated) {
+      return true;
+  }
+  return false;
+}
+
+function sessionValidation(req,res,next) {
+  if (isValidSession(req)) {
+      next();
+  }
+  else {
+      res.redirect('/login');
+  }
+}
+
+function isAdmin(req) {
+  if (req.session.user_type == 'admin') {
+      return true;
+  }
+  return false;
+}
+
+function adminAuthorization(req, res, next) {
+  if (!isAdmin(req)) {
+      res.status(403);
+      res.render("errorMessage", {error: "Not Authorized"});
+      return;
+  }
+  else {
+      next();
+  }
+}
 
 //nosql injection
 app.get('/nosql-injection', async (req,res) => {
@@ -65,7 +97,7 @@ app.get('/nosql-injection', async (req,res) => {
 	   return;
 	}	
 
-	const result = await userCollection.find({username: username}).project({username: 1, password: 1, _id: 1}).toArray();
+	const result = await userCollection.find({username: username}).project({username: 1, password: 1, _id: 1, user_type: 1}).toArray();
 
 	console.log(result);
 
@@ -86,9 +118,11 @@ app.get('/signup', (req, res) => {
 
 
   app.post('/submitUser', async (req,res) => {
+    console.log("submitUser");
     var name = req.body.name;
     var email = req.body.email;
     var password = req.body.password;
+    var user_type = 'user';
     var saltRounds = 12;
 
     if (!name) {
@@ -127,12 +161,13 @@ app.get('/signup', (req, res) => {
 
     var hashedPassword = await bcrypt.hash(password, saltRounds);
         
-    await userCollection.insertOne({name: name, email: email, password: hashedPassword});
+    await userCollection.insertOne({name: name, email: email, password: hashedPassword, user_type: user_type});
     console.log("Inserted user");
-
+  
     req.session.authenticated = true;
     req.session.email = email;
     req.session.name = name;
+    req.session.user_type = user_type;
     req.session.cookie.maxAge = expireTime;
     res.redirect('/members');
 });
@@ -156,7 +191,7 @@ app.post('/loggingin', async (req, res) => {
   // Look up user in database
   const result = await userCollection
     .find({ email: email })
-    .project({ email: 1, password: 1, name: 1 })
+    .project({ email: 1, password: 1, name: 1, user_type: 1})
     .toArray();
 
   console.log(result);
@@ -172,6 +207,7 @@ app.post('/loggingin', async (req, res) => {
     req.session.authenticated = true;
     req.session.email = email;
     req.session.name = result[0].name;
+    req.session.user_type = result[0].user_type;
     req.session.cookie.maxAge = expireTime;
 
     res.redirect('/members');
@@ -192,14 +228,21 @@ app.get('/login', (req,res) => {
 });
 
 
+app.get('/admin', sessionValidation, adminAuthorization, async (req,res) => {
+  const result = await userCollection.find().project({name: 1, user_type: 1}).toArray();
+
+  res.render("admin", {users: result});
+});
+
 
 //MEMBERS
 app.get('/members', (req, res) => {
     // Get the user's name and profile picture from the session
     const name = req.session.name;
     const email = req.session.email;
-    const randomImage = images[Math.floor(Math.random() * images.length)];
-    const pictureUrl = randomImage;
+    const pic1 = "/bron1.gif";
+    const pic2 = "/bron2.gif";
+    const pic3 = "/bron3.gif";
 
     // Check if the user is logged in
     if (!email) {
@@ -207,7 +250,7 @@ app.get('/members', (req, res) => {
       res.redirect('/login');
     } else {
       // Render the members page with the user's name and profile picture
-      res.render('members', { name: name, pictureUrl: pictureUrl });
+      res.render('members', { name: name, pic1: pic1, pic2: pic2, pic3: pic3});
     }
   });
 
@@ -224,10 +267,10 @@ app.post('/logout', (req, res) => {
   });
 });
 
-app.get("*", (req,res) => {
-	res.status(404);
-	res.send("Page not found - 404");
-})
+app.get("*", (req, res) => {
+  res.status(404);
+  res.render("404", {res: res});
+});
 
 app.listen(port, () => {
 	console.log("Node application listening on port "+port);
